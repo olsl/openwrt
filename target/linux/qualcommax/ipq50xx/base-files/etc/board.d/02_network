@@ -16,7 +16,8 @@ ipq50xx_setup_interfaces()
 	zyxel,scr50axe)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
-	glinet,gl-b3000)
+	glinet,gl-b3000|\
+	tplink,hx510)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
 	glinet,gl-x2000)
@@ -86,6 +87,16 @@ ipq50xx_setup_macs()
 		ucidef_set_label_macaddr "$label_mac"
 		# gmac1 has no nvmem MAC source, so stmmac would randomise the
 		# DSA conduit's address on every boot - pin it to the label MAC
+		ucidef_set_network_device_mac "eth0" "$label_mac"
+		;;
+	tplink,hx510)
+		# factory MAC is 6 raw bytes in tp_data/0x0434F100, mounted
+		# read-only during preinit (see lib/preinit/09_mount_tp_data)
+		label_mac=$(get_mac_binary "/tmp/tp_data/0x0434F100" 0)
+		[ -n "$label_mac" ] || return
+		ucidef_set_interface_macaddr "lan" "$label_mac"
+		ucidef_set_interface_macaddr "wan" "$(macaddr_add "$label_mac" 1)"
+		ucidef_set_label_macaddr "$label_mac"
 		ucidef_set_network_device_mac "eth0" "$label_mac"
 		;;
 	tplink,eap650-outdoor-v1|\

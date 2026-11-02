@@ -16,6 +16,10 @@ preinit_mount_tp_data() {
 		mtd_name="tp_data"
 		vol_name="tp_data"
 		;;
+	tplink,hx510)
+		mtd_name="misc_data_ro"
+		vol_name="misc_ro"
+		;;
 	*)
 		return
 		;;

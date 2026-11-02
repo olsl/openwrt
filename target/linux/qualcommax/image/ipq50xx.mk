@@ -378,6 +378,23 @@ define Device/tplink_eap650-outdoor-v1
 endef
 TARGET_DEVICES += tplink_eap650-outdoor-v1
 
+define Device/tplink_hx510
+	$(call Device/FitImageLzma)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := HX510
+	DEVICE_DTS_CONFIG := config@mp03.3
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 37248k
+	NAND_SIZE := 128m
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-tplink_hx510 \
+		kmod-dsa-rtl8365mb
+endef
+TARGET_DEVICES += tplink_hx510
+
 define Device/tplink_re700x
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

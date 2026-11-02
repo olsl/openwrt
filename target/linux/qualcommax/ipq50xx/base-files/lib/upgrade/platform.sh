@@ -311,6 +311,21 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume tp_data
 		nand_do_upgrade "$1"
 		;;
+	tplink,hx510)
+		# The stock U-Boot boots rootfs (tp_boot_idx unset/0) or
+		# rootfs_1 (tp_boot_idx=1) and falls back to the other slot
+		# when the kernel volume cannot be loaded. OpenWrt always
+		# lives in rootfs_1; the ISP firmware in rootfs is never
+		# written and stays available as a fallback. tp_boot_idx is
+		# only set once the write succeeded.
+		CI_UBIPART="rootfs_1"
+		nand_do_flash_file "$1" || nand_do_upgrade_failed
+		fw_setenv tp_boot_idx 1 || {
+			echo "failed to set tp_boot_idx"
+			nand_do_upgrade_failed
+		}
+		nand_do_upgrade_success
+		;;
 	wallys,dr5018s)
 		CI_UBIPART="rootfs"
 		remove_oem_ubi_volume debug
