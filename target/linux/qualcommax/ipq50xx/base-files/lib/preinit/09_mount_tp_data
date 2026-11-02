@@ -1,22 +1,31 @@
 #!/bin/sh
-# TP-Link/Mercusys boards keep their factory data (including the 6-byte
-# "default-mac") in the tp_data UBIFS volume. Attach and mount it read-only
-# during preinit so board.d/02_network and the ath11k caldata hotplug can
-# read the MAC without each attaching the volume themselves.
+# TP-Link/Mercusys boards keep their factory data (MAC address, and on some
+# boards the Wi-Fi calibration data) as files in a UBIFS volume. Attach and
+# mount it read-only at /tmp/tp_data during preinit so board.d/02_network
+# and the ath11k caldata hotplug can read it without each attaching the
+# volume themselves.
 
 . /lib/functions.sh
 
 preinit_mount_tp_data() {
+	local mtd_name vol_name
+
 	case "$(board_name)" in
-	mercusys,mr80x-v2|tplink,archer-ax55-v1) ;;
-	*) return ;;
+	mercusys,mr80x-v2|\
+	tplink,archer-ax55-v1)
+		mtd_name="tp_data"
+		vol_name="tp_data"
+		;;
+	*)
+		return
+		;;
 	esac
 
 	# ubiattach lives in /usr/sbin, which the preinit PATH omits
 	local PATH="/usr/sbin:/usr/bin:$PATH"
 	local mtd_num ubi_num
 
-	mtd_num=$(find_mtd_index tp_data)
+	mtd_num=$(find_mtd_index "$mtd_name")
 	[ -n "$mtd_num" ] || return
 
 	ubi_num=$(ubiattach -m "$mtd_num" 2>/dev/null | \
@@ -24,7 +33,7 @@ preinit_mount_tp_data() {
 	[ -n "$ubi_num" ] || return
 
 	mkdir -p /tmp/tp_data
-	mount -t ubifs -o ro "ubi${ubi_num}:tp_data" /tmp/tp_data 2>/dev/null
+	mount -t ubifs -o ro "ubi${ubi_num}:${vol_name}" /tmp/tp_data 2>/dev/null
 }
 
 boot_hook_add preinit_main preinit_mount_tp_data
