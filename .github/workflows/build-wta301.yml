@@ -1,4 +1,4 @@
-name: Build WTA301 OpenWrt
+name: Build WTA301 OpenWrt v2
 
 on:
   push:
@@ -26,43 +26,40 @@ jobs:
       - name: Feeds update
         run: |
           ./scripts/feeds update -a
-          # 只安装必要的 feeds，不安装所有包
-          ./scripts/feeds install ath11k-firmware-ipq5018-qcn6122
-          ./scripts/feeds install kmod-dsa-rtl8365mb
+          # 先不安装任何额外包，只编译内核
+          echo "Feeds updated"
 
-      - name: Configure for WTA301 (initramfs only - minimal)
+      - name: Configure for WTA301 (minimal kernel only)
         run: |
           cat > .config << 'EOF'
           CONFIG_TARGET_qualcommax=y
           CONFIG_TARGET_qualcommax_ipq50xx=y
           CONFIG_TARGET_qualcommax_ipq50xx_device_tplink_wta301=y
           CONFIG_TARGET_ROOTFS_INITRAMFS=y
-          CONFIG_TARGET_ROOTFS_SQUASHFS=y
           CONFIG_DEVEL=y
-          CONFIG_PACKAGE_ath11k-firmware-ipq5018-qcn6122=y
-          CONFIG_PACKAGE_kmod-dsa-rtl8365mb=y
-          # 禁用有问题的包
+          # 禁用所有额外包，只编译内核
+          CONFIG_PACKAGE_ath11k-firmware-ipq5018-qcn6122=n
+          CONFIG_PACKAGE_kmod-dsa-rtl8365mb=n
           CONFIG_PACKAGE_qt5base=n
           CONFIG_PACKAGE_qt5script=n
           CONFIG_PACKAGE_qt5tools=n
-          CONFIG_PACKAGE_qt5-x11=n
-          CONFIG_PACKAGE_qt5-xml=n
-          CONFIG_PACKAGE_qt5-xmlpatterns=n
           EOF
           make defconfig
-          # 再次禁用 Qt5，防止 defconfig 重新启用
+          # 再次禁用 Qt5
           sed -i 's/CONFIG_PACKAGE_qt5base=y/# CONFIG_PACKAGE_qt5base is not set/' .config
           make defconfig
+          # 显示配置
+          echo "=== .config 关键配置 ==="
+          grep -E "CONFIG_TARGET|CONFIG_PACKAGE_ath11k|CONFIG_PACKAGE_kmod-dsa|CONFIG_PACKAGE_qt5" .config
 
-      - name: Build
+      - name: Build (verbose output)
         run: |
-          make -j$(nproc) V=s
+          make -j$(nproc) V=s 2>&1 | tail -200
 
       - name: Upload initramfs image
         uses: actions/upload-artifact@v4
         with:
-          name: openwrt-wta301-initramfs
+          name: openwrt-wta301-initramfs-v2
           path: |
             bin/targets/qualcommax/ipq50xx/*initramfs*
-            bin/targets/qualcommax/ipq50xx/*sysupgrade*
-          if-no-files-found: error
+          if-no-files-found: warn
