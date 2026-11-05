@@ -54,7 +54,8 @@ jobs:
 
       - name: Build (verbose output)
         run: |
-          make -j$(nproc) V=s 2>&1 | tail -200
+          set -o pipefail
+          make -j$(nproc) V=s 2>&1 | tee build.log | tail -300
 
       - name: Upload initramfs image
         uses: actions/upload-artifact@v4
