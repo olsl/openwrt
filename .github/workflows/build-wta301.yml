@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 120
+    timeout-minutes: 240
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Configure for WTA301 (initramfs only)
+      - name: Configure for WTA301 (initramfs only - minimal)
         run: |
           cat > .config << 'EOF'
           CONFIG_TARGET_qualcommax=y
@@ -37,30 +37,8 @@ jobs:
           CONFIG_TARGET_ROOTFS_INITRAMFS=y
           CONFIG_TARGET_ROOTFS_SQUASHFS=y
           CONFIG_DEVEL=y
-          CONFIG_TOOLCHAINOPTS=y
-          CONFIG_PACKAGE_luci=y
-          CONFIG_PACKAGE_luci-ssl=y
-          CONFIG_PACKAGE_openssl=y
-          CONFIG_PACKAGE_wireless-regdb=y
-          CONFIG_PACKAGE_kmod-ath11k=y
           CONFIG_PACKAGE_ath11k-firmware-ipq5018-qcn6122=y
           CONFIG_PACKAGE_kmod-dsa-rtl8365mb=y
-          CONFIG_PACKAGE_usb=y
-          CONFIG_PACKAGE_kmod-usb-storage=y
-          CONFIG_PACKAGE_block-mount=y
-          CONFIG_PACKAGE_kmod-fs-ext4=y
-          CONFIG_PACKAGE_kmod-fs-vfat=y
-          CONFIG_PACKAGE_fdisk=y
-          CONFIG_PACKAGE_lsblk=y
-          CONFIG_PACKAGE_btrfs-progs=y
-          CONFIG_PACKAGE_kmod-fs-btrfs=y
-          CONFIG_PACKAGE_autocore=y
-          CONFIG_PACKAGE_autocore-arm64=y
-          CONFIG_PACKAGE_automount=y
-          CONFIG_PACKAGE_HTTPS=y
-          CONFIG_PACKAGE_curl=y
-          CONFIG_PACKAGE_ttyd=y
-          CONFIG_PACKAGE_luci-app-ttyd=y
           EOF
           make defconfig
 
