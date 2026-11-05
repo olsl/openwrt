@@ -26,7 +26,9 @@ jobs:
       - name: Feeds update
         run: |
           ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          # 只安装必要的 feeds，不安装所有包
+          ./scripts/feeds install ath11k-firmware-ipq5018-qcn6122
+          ./scripts/feeds install kmod-dsa-rtl8365mb
 
       - name: Configure for WTA301 (initramfs only - minimal)
         run: |
@@ -39,7 +41,17 @@ jobs:
           CONFIG_DEVEL=y
           CONFIG_PACKAGE_ath11k-firmware-ipq5018-qcn6122=y
           CONFIG_PACKAGE_kmod-dsa-rtl8365mb=y
+          # 禁用有问题的包
+          CONFIG_PACKAGE_qt5base=n
+          CONFIG_PACKAGE_qt5script=n
+          CONFIG_PACKAGE_qt5tools=n
+          CONFIG_PACKAGE_qt5-x11=n
+          CONFIG_PACKAGE_qt5-xml=n
+          CONFIG_PACKAGE_qt5-xmlpatterns=n
           EOF
+          make defconfig
+          # 再次禁用 Qt5，防止 defconfig 重新启用
+          sed -i 's/CONFIG_PACKAGE_qt5base=y/# CONFIG_PACKAGE_qt5base is not set/' .config
           make defconfig
 
       - name: Build
