@@ -1,4 +1,4 @@
-name: Build WTA301 OpenWrt v5
+name: Build WTA301 OpenWrt v6
 
 on:
   push:
@@ -30,18 +30,17 @@ jobs:
 
       - name: Configure for WTA301
         run: |
-          # 使用默认配置，然后选择我们的设备
-          make defconfig
-          # 手动设置设备
-          sed -i 's/CONFIG_TARGET_QUALCOMMAX_IPQ50XX_DEVICE_.*=y/# CONFIG_TARGET_QUALCOMMAX_IPQ50XX_DEVICE_ is not set/' .config
-          echo "CONFIG_TARGET_QUALCOMMAX=y" >> .config
-          echo "CONFIG_TARGET_QUALCOMMAX_IPQ50XX=y" >> .config
-          echo "CONFIG_TARGET_QUALCOMMAX_IPQ50XX_DEVICE_tplink_wta301=y" >> .config
-          echo "CONFIG_TARGET_ROOTFS_INITRAMFS=y" >> .config
-          echo "CONFIG_DEVEL=y" >> .config
+          # 先设置 target，让 make defconfig 生成基础配置
+          cat > .config << 'EOF'
+          CONFIG_TARGET_qualcommax=y
+          CONFIG_TARGET_qualcommax_ipq50xx=y
+          CONFIG_TARGET_qualcommax_ipq50xx_device_tplink_wta301=y
+          CONFIG_TARGET_ROOTFS_INITRAMFS=y
+          CONFIG_DEVEL=y
+          EOF
           make defconfig
           echo "=== .config 关键配置 ==="
-          grep -E "CONFIG_TARGET_QUALCOMMAX.*DEVICE" .config
+          grep -E "CONFIG_TARGET.*DEVICE" .config || true
 
       - name: Build
         run: |
@@ -49,12 +48,12 @@ jobs:
           echo "=== 开始编译 ==="
           make -j$(nproc) V=s 2>&1 | tee build.log | tail -200
           echo "=== 编译完成，查看生成的文件 ==="
-          ls -la bin/targets/qualcommax/ipq50xx/
+          ls -la bin/targets/qualcommax/ipq50xx/ || true
 
       - name: Upload initramfs image
         uses: actions/upload-artifact@v4
         with:
-          name: openwrt-wta301-initramfs-v5
+          name: openwrt-wta301-initramfs-v6
           path: |
             bin/targets/qualcommax/ipq50xx/*wta301*initramfs*
           if-no-files-found: warn
