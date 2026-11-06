@@ -34,7 +34,7 @@ jobs:
           cat > .config << 'EOF'
           CONFIG_TARGET_qualcommax=y
           CONFIG_TARGET_qualcommax_ipq50xx=y
-          CONFIG_TARGET_qualcommax_ipq50xx_device_tplink_wta301=y
+          CONFIG_TARGET_qualcommax_ipq50xx_DEVICE_tplink_wta301=y
           CONFIG_TARGET_ROOTFS_INITRAMFS=y
           CONFIG_DEVEL=y
           # 禁用所有包
@@ -69,14 +69,13 @@ jobs:
           echo "=== .config 关键配置 ==="
           grep -E "CONFIG_TARGET|CONFIG_PACKAGE_kmod|CONFIG_PACKAGE_lib" .config | head -30
 
-      - name: Build kernel only
+      - name: Build full
         run: |
           set -o pipefail
-          # 只编译内核和镜像，不编译包
-          make -j$(nproc) target/linux/compile V=s 2>&1 | tee build_kernel.log | tail -100
-          make -j$(nproc) target/linux/install V=s 2>&1 | tee -a build_kernel.log | tail -100
+          # 完整编译
+          make -j$(nproc) V=s 2>&1 | tee build.log
           echo "=== 编译完成，查看生成的文件 ==="
-          ls -la bin/targets/qualcommax/ipq50xx/
+          ls -la bin/targets/qualcommax/ipq50xx/ || echo "目录不存在！"
 
       - name: Upload initramfs image
         uses: actions/upload-artifact@v4
