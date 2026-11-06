@@ -1,4 +1,4 @@
-name: Build WTA301 OpenWrt v9
+name: Build WTA301 OpenWrt v10
 
 on:
   push:
@@ -30,48 +30,37 @@ jobs:
 
       - name: Configure
         run: |
-          # 清空 .config，写入最小配置
+          # 清空 .config，写入 WTA301 配置
           cat > .config << 'EOF'
           CONFIG_TARGET_qualcommax=y
           CONFIG_TARGET_qualcommax_ipq50xx=y
           CONFIG_TARGET_qualcommax_ipq50xx_device_tplink_wta301=y
           CONFIG_TARGET_ROOTFS_INITRAMFS=y
           CONFIG_DEVEL=y
-          # 只编译内核，不编译其他包
-          CONFIG_PACKAGE_kmod-loader-ramfs=y
           EOF
           
           # 完善配置
           make defconfig
           
-          echo "=== .config 关键配置 ==="
-          grep "CONFIG_TARGET" .config | head -10
+          echo "=== .config 设备配置 ==="
+          grep "CONFIG_TARGET.*DEVICE" .config || echo "没有找到设备配置！"
+          echo ""
+          echo "=== 确认目标平台 ==="
+          grep "CONFIG_TARGET_qualcommax" .config | head -5
 
-      - name: Build toolchain
+      - name: Build
         run: |
           set -o pipefail
-          echo "=== 编译工具链 ==="
-          make -j$(nproc) toolchain/install V=s 2>&1 | tee build_toolchain.log | tail -50
-
-      - name: Build kernel
-        run: |
-          set -o pipefail
-          echo "=== 编译内核 ==="
-          make -j$(nproc) target/linux/compile V=s 2>&1 | tee build_kernel.log | tail -100
-
-      - name: Install image
-        run: |
-          set -o pipefail
-          echo "=== 生成镜像 ==="
-          make target/linux/install V=s 2>&1 | tee build_install.log | tail -50
-          
-          echo "=== 生成的文件 ==="
+          echo "=== 开始完整编译 ==="
+          make -j$(nproc) V=s 2>&1 | tee build.log | tail -200
+          echo "=== 编译完成 ==="
+          echo "生成的文件:"
           ls -la bin/targets/qualcommax/ipq50xx/ 2>/dev/null || echo "目录不存在"
 
       - name: Upload initramfs image
         uses: actions/upload-artifact@v4
         with:
-          name: openwrt-wta301-initramfs-v9
+          name: openwrt-wta301-initramfs-v10
           path: |
             bin/targets/qualcommax/ipq50xx/*wta301*initramfs*
           if-no-files-found: warn
